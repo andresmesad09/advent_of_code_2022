@@ -1,51 +1,93 @@
 from pathlib import Path
 from typing import List
+import numpy as np
 
 
-def apply_movement(stacks: List, clean_movements: List, qty: int, from_stack: int, to_stack: int):
-    for m in clean_movements:
-        m_split = m.split(' ')
-        qty = int(m_split[1])
-        from_stack = int(m_split[3]) - 1
-        to_stack = int(m_split[5]) - 1
-        stacks[to_stack] =
+def display_stacks(stacks):
+    print("\nStacks\n")
+    for s in stacks:
+        print(s, stacks[s])
+
+
+def load_stacks(stacks, stack_strings, indexes):
+    for string in stack_strings[:-1]:
+        stack_num = 1
+        for index in indexes:
+            if string[index] != " ":
+                stacks[stack_num].insert(0, string[index])
+            stack_num += 1
+    return stacks
+
+
+def empty_stacks(stacks):
+    for stack_num in stacks:
+        stack_num[stack_num].clear()
+    return stacks
+
+
+def get_stack_end(stacks):
+    answer = ""
+    for stack in stacks:
+        answer += stacks[stack][-1]
+    return answer
 
 
 def first_part(env: str = "test"):
     file_name = "input_5_sample.csv" if env == 'test' else "input_5.csv"
     input_path = Path().cwd() / "data" / file_name
     with input_path.open(mode='r', encoding='utf-8') as file:
-        file_content = file.readlines()
+        stack_strings, instructions = (i.splitlines()
+                                       for i in file.read().strip('\n').split('\n\n'))
 
-    # get the index of the empty line minus 1
-    position_of_stacks = file_content[file_content.index('\n') - 1]
-    number_of_stacks = int(position_of_stacks
-                           # split by space to get each item in a list.
-                           # Then get the last position
-                           .split()[-1]
-                           )
-    high_of_stacks = file_content.index('\n') - 1
-    print(position_of_stacks)
-    print(number_of_stacks)
-    print(high_of_stacks)
+    stacks = {int(digit): [] for digit in stack_strings[-1].replace(' ', '')}
+    indexes = [index for index, char in enumerate(
+        stack_strings[-1]) if char != " "]
+    stacks = load_stacks(stacks, stack_strings, indexes)
 
-    clean_rows = [line.replace('\n', '')
-                  for line in file_content[:high_of_stacks]]
-    stacks = []
-    for _ in range(number_of_stacks):
-        stacks.append([])
+    for instruction in instructions:
+        instruction = instruction.replace('move', "").replace(
+            "from", "").replace("to ", "").split()
+        instruction = [int(i) for i in instruction]
 
-    for row, stack_pos in zip(clean_rows, range(len(stacks))):
-        for i in range(number_of_stacks):
-            item_in_stack = row[i*4:(i*4)+4]
-            stacks[stack_pos].append(item_in_stack)
+        crates = instruction[0]
+        from_stack = instruction[1]
+        to_stack = instruction[2]
 
-    clean_movements = [move.replace('\n', '')
-                       for move in file_content[high_of_stacks+2:]]
-    print(stacks)
+        for _ in range(crates):
+            crate_removed = stacks[from_stack].pop()
+            stacks[to_stack].append(crate_removed)
+    return get_stack_end(stacks)
 
-    apply_movement(stacks, clean_movements, qty, from_stack, to_stack)
+
+def second_part(env: str = "test"):
+    file_name = "input_5_sample.csv" if env == 'test' else "input_5.csv"
+    input_path = Path().cwd() / "data" / file_name
+    with input_path.open(mode='r', encoding='utf-8') as file:
+        stack_strings, instructions = (i.splitlines()
+                                       for i in file.read().strip('\n').split('\n\n'))
+
+    stacks = {int(digit): [] for digit in stack_strings[-1].replace(' ', '')}
+    indexes = [index for index, char in enumerate(
+        stack_strings[-1]) if char != " "]
+    stacks = load_stacks(stacks, stack_strings, indexes)
+
+    for instruction in instructions:
+        instruction = instruction.replace('move', "").replace(
+            "from", "").replace("to ", "").split()
+        instruction = [int(i) for i in instruction]
+
+        crates = instruction[0]
+        from_stack = instruction[1]
+        to_stack = instruction[2]
+
+        crates_to_remove = stacks[from_stack][-crates:]
+        stacks[from_stack] = stacks[from_stack][:-crates]
+
+        for crate in crates_to_remove:
+            stacks[to_stack].append(crate)
+    return get_stack_end(stacks)
 
 
 if __name__ == '__main__':
-    first_part()
+    print(first_part("prod"))
+    print(second_part("prod"))
